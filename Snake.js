@@ -1,37 +1,90 @@
-import { DIRECTIONS } from './levels.js';
+import { DIRECTIONS } from "./levels.js";
 
 export class Snake {
-    constructor(id, body, direction = DIRECTIONS.right) {
-        this.id = id;
-        // Sao chép từng tọa độ.
-        this.body = body.map(part => ({ x: part.x, y: part.y }));
-        this.direction = { ...direction };
-        this.nextDirection = { ...direction };
+    constructor(body, direction) {
+        // Sao chép từng tọa độ để thân rắn có dữ liệu riêng.
+        this.body = body.map(function (position) {
+            return {
+                x: position.x,
+                y: position.y
+            };
+        });
+
+        this.direction = {
+            x: direction.x,
+            y: direction.y
+        };
+
+        this.nextDirection = {
+            x: direction.x,
+            y: direction.y
+        };
+
         this.turnQueued = false;
         this.alive = true;
         this.score = 0;
         this.foodsEaten = 0;
     }
 
-    get head() { return this.body[0]; }
+    get head() {
+        return this.body[0];
+    }
 
     setDirection(direction) {
-        if (!this.alive || this.turnQueued) return false;
-        const valid = Object.values(DIRECTIONS).some(d => d.x === direction.x && d.y === direction.y);
-        if (!valid) return false;
-        const reverse = direction.x === -this.direction.x && direction.y === -this.direction.y;
-        const unchanged = direction.x === this.direction.x && direction.y === this.direction.y;
-        if (reverse || unchanged) return false;
-        this.nextDirection = { ...direction };
-        // Khóa một lần rẽ/bước: chặn bấm lên rồi trái quá nhanh khi đang đi phải.
+        if (!this.alive || this.turnQueued || !direction) {
+            return false;
+        }
+
+        const validDirection = Object.values(DIRECTIONS).some(
+            function (allowedDirection) {
+                return allowedDirection.x === direction.x
+                    && allowedDirection.y === direction.y;
+            }
+        );
+
+        if (!validDirection) {
+            return false;
+        }
+
+        const isReverse =
+            direction.x === -this.direction.x
+            && direction.y === -this.direction.y;
+
+        const isUnchanged =
+            direction.x === this.direction.x
+            && direction.y === this.direction.y;
+
+        if (isReverse || isUnchanged) {
+            return false;
+        }
+
+        this.nextDirection = {
+            x: direction.x,
+            y: direction.y
+        };
+
+        // Chỉ nhận một lần rẽ trong mỗi bước di chuyển.
         this.turnQueued = true;
+
         return true;
     }
 
     move(nextHead, grow) {
-        this.body.unshift({ ...nextHead });
-        if (!grow) this.body.pop();
-        this.direction = { ...this.nextDirection };
+        this.body.unshift({
+            x: nextHead.x,
+            y: nextHead.y
+        });
+
+        // Không ăn thì bỏ đuôi; ăn thì giữ đuôi để dài thêm.
+        if (!grow) {
+            this.body.pop();
+        }
+
+        this.direction = {
+            x: this.nextDirection.x,
+            y: this.nextDirection.y
+        };
+
         this.turnQueued = false;
     }
 }
